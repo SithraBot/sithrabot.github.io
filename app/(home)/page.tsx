@@ -1,4 +1,4 @@
-import { Image } from 'fumadocs-core/framework';
+import Image from 'next/image';
 import { Card } from 'fumadocs-ui/components/card';
 import { Zap, Code, Package, Puzzle } from 'lucide-react';
 

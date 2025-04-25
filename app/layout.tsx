@@ -8,6 +8,13 @@ const inter = Inter({
   subsets: ['latin'],
 });
 
+export const metadata = {
+  title: 'sithra-rs Documentation',
+  icons: {
+    icon: '/icon.png',
+  },
+};
+
 export default function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang="zh-CN" className={inter.className} suppressHydrationWarning>

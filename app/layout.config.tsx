@@ -1,4 +1,4 @@
-import { Image } from 'fumadocs-core/framework';
+import Image from 'next/image';
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 import { Boxes, Hammer } from 'lucide-react';
 
