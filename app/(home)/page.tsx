@@ -1,5 +1,4 @@
 import { Image } from 'fumadocs-core/framework';
-import Link from 'next/link';
 import { Card } from 'fumadocs-ui/components/card';
 import { Zap, Code, Package, Puzzle } from 'lucide-react';
 
