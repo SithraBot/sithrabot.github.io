@@ -1,0 +1,127 @@
+---
+title: 开发指南
+description: 学习如何开发 sithra-rs 插件
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Folder, File, Files } from 'fumadocs-ui/components/files';
+import { Code2, Puzzle, BookOpen } from 'lucide-react';
+
+## 开发前的准备
+
+<div className="flex items-center gap-2 mb-4">
+  <Code2 className="w-5 h-5" />
+  <span className="text-lg font-medium">技术要求</span>
+</div>
+
+sithra-rs 是一个基于 Rust 的现代化、高性能、可扩展的机器人框架。要开发 sithra-rs 插件，您需要:
+
+- 掌握 Rust 语言基础语法
+- 了解 Rust 异步编程
+- 熟悉 sithra-rs 的架构设计
+
+<Callout type="info" icon={<BookOpen />}>
+  不用担心！即使您是 Rust 新手，只要掌握基础语法和异步编程概念，就可以开始开发插件了。
+  我们提供了详细的示例代码和文档来帮助您快速上手。
+</Callout>
+
+## 插件系统概述
+
+<div className="flex items-center gap-2 mb-4">
+  <Puzzle className="w-5 h-5" />
+  <span className="text-lg font-medium">基于 IOEVENT 的插件架构</span>
+</div>
+
+sithra-rs 的插件系统基于 [IOEVENT](https://github.com/BERADQ/ioevent) 构建，每个插件都是独立的二进制程序。这种设计提供了:
+
+- 完全的事件处理能力
+- 灵活的过程调用机制
+- 插件间的服务提供与调用
+- 可扩展的过程模型定义
+
+## 开发流程
+
+<Steps>
+<Step>
+### 创建项目
+
+使用 Cargo 创建新项目:
+
+```bash
+cargo new my_plugin
+cd my_plugin
+```
+</Step>
+
+<Step>
+### 添加依赖
+
+编辑 `Cargo.toml`:
+
+```toml
+[package]
+name = "my_plugin"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ioevent = { git = "https://github.com/BERADQ/ioevent.git" }
+sithra_common = { git = "https://github.com/SithraBot/sithra-rs.git" }
+tokio = { version = "1", features = ["full"] }
+log = "0.4"
+```
+</Step>
+
+<Step>
+### 实现插件逻辑
+
+创建 `src/main.rs`:
+
+```rust
+use event::MessageEventFlattened as Message;
+use ioevent::prelude::*;
+use sithra_common::prelude::*;
+use log::info;
+
+// 定义订阅者列表
+const SUBSCRIBERS: &[ioevent::Subscriber<CommonState>] = &[
+    create_subscriber!(echo_msg)
+];
+
+// 实现消息处理函数
+#[subscriber]
+async fn echo_msg(state: State<CommonState>, msg: Message) -> Result {
+    // 检查消息前缀
+    if msg.starts_with("echo ") {
+        // 记录日志
+        info!("echo 插件收到{}发送的消息", msg.sender.call_name());
+        
+        // 提取消息内容
+        let message = msg.message.clone().trim_start_matches("echo ");
+        
+        // 回复消息
+        msg.reply(&state, message).await?;
+    }
+    Ok(())
+}
+
+// 插件入口函数
+#[sithra_common::main(subscribers = SUBSCRIBERS, state = CommonState)]
+async fn main(_effect_wright: &ioevent::EffectWright) {
+    info!("echo 示例插件启动成功");
+}
+```
+</Step>
+
+<Step>
+### 编译运行
+
+```bash
+cargo build --release
+```
+
+编译后的插件文件位于 `target/release` 目录。
+</Step>
+</Steps>

@@ -1,0 +1,92 @@
+---
+title: 快速上手
+description: 在几分钟内部署您的 sithra-rs 机器人
+---
+
+import { Steps } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Files, File, Folder } from 'fumadocs-ui/components/files';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { GithubInfo } from 'fumadocs-ui/components/github-info';
+import { Card } from 'fumadocs-ui/components/card';
+
+sithra-rs 是一个开源的、基于 Rust 的 OneBot 多功能聊天机器人框架。它支持跨平台部署，包括但不限于 Windows、Linux、macOS 和 Android。
+
+## 系统要求
+
+目前官方提供以下平台的预编译二进制文件：
+
+- [x] Windows x86-64
+- [x] Linux x86-64
+
+其他平台需要通过源码自行编译。
+
+## 安装步骤
+
+### 下载安装包
+
+从 [GitHub Releases](https://github.com/SithraBot/sithra-rs/releases) 获取最新版本的 sithra-rs。
+
+### 解压文件
+
+将下载的压缩包解压到任意目录。建议创建一个专门的文件夹，因为程序会在工作目录生成必要的配置文件。
+
+<Files>
+  <Folder name="sithra-rs" defaultOpen>
+    <File name="sithra-rs.exe" />
+    <File name="config.toml" />
+    <Folder name="plugins">
+      <File name="example" />
+    </Folder>
+  </Folder>
+</Files>
+
+### 配置文件
+
+首次运行时，sithra-rs 会自动生成 `config.toml` 配置文件。您需要根据实际情况修改以下配置项：
+
+```toml
+[base]
+# OneBot 服务器的 WebSocket 地址
+ws-url = "ws://localhost:8084"
+
+# 日志级别: debug, info, warn, error, trace
+log-level = "info"
+
+# 机器人账号
+self-id = 1234567890
+```
+
+<Callout type="info">
+  请务必确认 `ws-url` 配置项是否正确，否则将无法正常工作。
+
+  当前 sithra-rs 仅支持 OneBot 11 正向 WebSocket 协议。
+  
+  请勿使用其他协议，否则将无法正常工作。
+</Callout>
+
+### 启动服务
+
+<Tabs items={['Windows', 'Linux/macOS']}>
+  <Tab>
+    ```bash
+    .\sithra-rs.exe
+    ```
+  </Tab>
+  <Tab>
+    ```bash
+    chmod +x ./sithra-rs
+    ./sithra-rs
+    ```
+  </Tab>
+</Tabs>
+
+## 获取帮助
+
+<div className="not-prose mt-0 flex flex-col gap-4">
+  <GithubInfo owner="SithraBot" repo="sithra-rs" />
+  <p className="text-sm text-fd-muted-foreground">
+    如果您在使用过程中遇到任何问题，欢迎在 GitHub Issues 提出。
+  </p>
+</div>
+您也可以加入我们的 QQ 群获取帮助：[948180922](https://qm.qq.com/q/9rhbJpXBF6)

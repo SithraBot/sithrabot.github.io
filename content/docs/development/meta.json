@@ -1,0 +1,10 @@
+{
+    "title": "开发文档",
+    "description": "开始开发 sithra-rs 插件",
+    "icon": "Hammer",
+    "root": true,
+    "pages": [
+        "index",
+        "standards"
+    ]
+}

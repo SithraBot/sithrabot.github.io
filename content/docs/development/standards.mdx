@@ -1,0 +1,151 @@
+---
+title: 开发规范
+description: sithra-rs 插件开发规范指南
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Folder, File, Files } from 'fumadocs-ui/components/files';
+import { FileCode, Zap, Package, AlertTriangle } from 'lucide-react';
+
+## 日志处理
+
+<div className="flex items-center gap-2 mb-4">
+  <FileCode className="w-5 h-5" />
+  <span className="text-lg font-medium">使用标准日志库</span>
+</div>
+
+请使用 `log` crate 进行日志记录:
+
+```rust
+log::info!("插件启动成功");
+log::error!("发生错误: {}", err);
+log::debug!("调试信息: {:?}", data);
+```
+
+<Callout type="warn" icon={<AlertTriangle />}>
+  ### 重要提示
+  
+  由于插件使用标准输入输出(stdio)与 sithra-rs 通信，请勿使用:
+  - `println!`
+  - `dbg!`
+  - 其他直接写入 stdout 的方式
+  
+  这些操作会干扰插件通信，导致功能异常。
+</Callout>
+
+## 错误处理
+
+<div className="flex items-center gap-2 mb-4">
+  <Zap className="w-5 h-5" />
+  <span className="text-lg font-medium">优雅处理异常</span>
+</div>
+
+推荐的错误处理方式:
+- 使用 `Result` 类型返回错误
+- 通过 `log::error!` 记录错误信息
+- 适当忽略非关键错误
+
+<Callout type="warn" icon={<AlertTriangle />}>
+  ### 避免使用 unwrap/expect
+  
+  - 插件崩溃不会自动重启
+  - 插件异常退出可能导致 sithra-rs 崩溃
+  - 请始终妥善处理错误，保持插件稳定运行
+</Callout>
+
+## 项目结构
+
+<div className="flex items-center gap-2 mb-4">
+  <Package className="w-5 h-5" />
+  <span className="text-lg font-medium">规范的项目组织</span>
+</div>
+
+根据插件类型选择合适的项目结构:
+
+<Tabs items={['普通插件', '服务型插件']}>
+  <Tab>
+    <Files>
+      <Folder name="my_plugin" defaultOpen>
+        <Folder name="src" defaultOpen>
+          <File name="main.rs" />
+        </Folder>
+        <File name="Cargo.toml" />
+      </Folder>
+    </Files>
+  </Tab>
+  <Tab>
+    <Files>
+      <Folder name="my_plugin" defaultOpen>
+        <Folder name="crates" defaultOpen>
+          <Folder name="my_plugin" defaultOpen>
+            <Folder name="src" defaultOpen>
+              <File name="main.rs" />
+            </Folder>
+            <File name="Cargo.toml" />
+          </Folder>
+          <Folder name="sithra_my_plugin_common" defaultOpen>
+            <Folder name="src" defaultOpen>
+              <File name="lib.rs" />
+            </Folder>
+            <File name="Cargo.toml" />
+          </Folder>
+        </Folder>
+        <File name="Cargo.toml" />
+      </Folder>
+    </Files>
+  </Tab>
+</Tabs>
+
+<Callout type="info">
+  服务型插件需要:
+  - 主程序包: 实现具体功能
+  - 公共包(`sithra_<plugin_name>_common`): 定义类型和接口
+</Callout>
+
+## 版本规范
+
+<div className="flex items-center gap-2 mb-4">
+  <Package className="w-5 h-5" />
+  <span className="text-lg font-medium">语义化版本控制</span>
+</div>
+
+插件版本必须遵循 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/) (SemVer) 规范。版本号格式为: `主版本号.次版本号.修订号`。
+
+对于服务型插件，**必须严格遵守**以下版本更新规则:
+
+<Tabs items={['修订号', '次版本号', '主版本号']}>
+  <Tab>
+    当进行向下兼容的缺陷修复时，递增修订号:
+    - 修复 bug
+    - 优化性能
+    - 改进文档
+    - 不改变公共 API
+  </Tab>
+  <Tab>
+    当增加向下兼容的新功能时，递增次版本号:
+    - 为公共结构添加新字段
+    - 为请求结构添加可选字段
+    - 添加新的 API 方法
+    - 不改变现有 API 行为
+  </Tab>
+  <Tab>
+    当进行不兼容的更新时，必须递增主版本号:
+    - 删除或重命名公共结构的已有字段
+    - 修改字段类型
+    - 改变 API 行为
+    - 任何破坏向下兼容性的更改
+  </Tab>
+</Tabs>
+
+<Callout type="warn" icon={<AlertTriangle />}>
+  ### 服务型插件的版本控制
+  
+  由于服务型插件的公共包(`sithra_<plugin_name>_common`)定义了插件间通信的接口，
+  错误的版本控制可能导致:
+  - 其他插件无法正常调用服务
+  - 运行时类型不匹配崩溃
+  - 数据序列化/反序列化失败
+  
+  因此必须严格遵守版本规范，确保兼容性。
+</Callout> 

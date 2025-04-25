@@ -1,0 +1,159 @@
+---
+title: 添加插件
+description: 使用插件扩展 sithra-rs 的功能
+---
+
+import { Steps } from 'fumadocs-ui/components/steps';
+import { Files, File, Folder } from 'fumadocs-ui/components/files';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Compass, MessageCircle, Pickaxe, Search, Shield, Settings, Package, Plug, Wrench, RefreshCw } from 'lucide-react';
+
+# 插件系统概述
+
+sithra-rs 采用插件化架构设计，通过独立的插件二进制文件来扩展功能。这种设计使得:
+
+- <div className="flex items-center gap-2"><Package className="w-4 h-4" /> 插件可以独立开发和分发</div>
+- <div className="flex items-center gap-2"><Plug className="w-4 h-4" /> 即插即用，无需重新编译主程序</div>
+- <div className="flex items-center gap-2"><Wrench className="w-4 h-4" /> 按需安装，减少资源占用</div>
+
+<Callout type="warn" icon={<Shield />}>
+  ### 安全警告
+
+  由于插件具有以下特点:
+  - 以二进制形式分发，难以审查代码
+  - 独立运行，具有较高系统权限
+  - 可能包含恶意代码
+
+  因此在安装第三方插件时:
+  2. **必须确保插件开发者可信**
+  3. **建议使用开源插件**
+  4. **避免安装来源不明的插件**
+
+  sithra-rs 官方不对任何非官方插件的安全性负责。
+</Callout>
+
+## 安装插件
+
+<Steps>
+### 获取插件文件
+
+目前插件主要通过以下渠道分发:
+- GitHub Releases
+- 开发者自行分发
+
+<Callout type="info" icon={<Settings />}>
+  请确保下载的插件版本与您的操作系统和 CPU 架构匹配:
+  - Windows: `.exe` 文件
+  - Linux: 无扩展名的二进制文件
+  - macOS: 无扩展名的二进制文件
+</Callout>
+
+### 放置插件
+
+将插件文件放入 `plugins` 目录。以 `echo` 插件为例:
+
+<Files>
+  <Folder name="sithra-rs" defaultOpen>
+    <Folder name="plugins" defaultOpen>
+      <File name="echo.exe" />
+    </Folder>
+    <File name="config.toml" />
+    <File name="sithra-rs.exe" />
+  </Folder>
+</Files>
+
+### 启动加载
+
+重启 sithra-rs，插件会自动加载。您可以在日志中看到加载信息:
+
+```bash
+2025-04-24T15:41:30.860854Z  INFO plugin_loader: 成功加载插件: echo
+2025-04-24T15:41:30.861278Z  INFO echo: echo 示例插件启动成功
+```
+
+需要注意的是，并非是所有插件都会在日志中显示 **启动** 信息，插件启动行为由插件开发者决定。
+
+</Steps>
+
+## 配置插件
+
+大多数插件会在首次运行时生成配置文件。以 `headless` 插件为例:
+
+<Tabs items={['目录结构', '配置文件']}>
+  <Tab>
+    <Files>
+      <Folder name="sithra-rs" defaultOpen>
+        <Folder name="headless" defaultOpen>
+          <File name="config.toml" />
+        </Folder>
+        <Folder name="plugins">
+          <File name="headless.exe" />
+        </Folder>
+        <File name="config.toml" />
+        <File name="sithra-rs.exe" />
+      </Folder>
+    </Files>
+  </Tab>
+  <Tab>
+    ```toml
+    # headless/config.toml
+    
+    # WebDriver 服务地址
+    webdriver-url = "http://127.0.0.1:2356"
+    ```
+  </Tab>
+</Tabs>
+
+<Callout type="info">
+  修改配置后需要重启 sithra-rs 才能生效。建议先查看配置文件中的注释说明，了解各配置项的作用。
+</Callout>
+
+## 官方插件
+
+sithra-rs 官方维护的插件:
+
+<Cards>
+  <Card 
+    title="headless" 
+    icon={<Compass />}
+    href="https://github.com/SithraBot/sithra-plugin-headless"
+  >
+    无头浏览器服务。
+    
+    用于网页截图。支持 Chrome、Firefox、Edge 等主流浏览器，可由插件调用。
+  </Card>
+  <Card 
+    title="echo" 
+    icon={<MessageCircle />}
+    href="https://github.com/SithraBot/sithra-plugin-echo"
+  >
+    开发者的第一个插件，简单的复读插件。
+    - echo 指令将复读内容。
+    - 戳一戳将回复："你要干嘛~"
+  </Card>
+  <Card 
+    title="mc-tools" 
+    icon={<Pickaxe />}
+    href="https://github.com/SithraBot/sithra-plugin-mc-tools"
+  >
+    Minecraft 工具集，支持:
+    - 查询 MCMOD 百科 (由 `headless` 插件提供支持)
+    - 获取玩家皮肤
+  </Card>
+  <Card 
+    title="search-cratesio" 
+    icon={<Search />}
+    href="https://github.com/SithraBot/sithra-plugin-search-cratesio"
+  >
+    crates.io 包搜索工具。
+    
+    可快速查找 Rust 包信息、版本、下载量等数据。包说明渲染由 `headless` 插件提供支持。
+  </Card>
+</Cards>
+
+<Callout>
+  所有官方插件均在 GitHub 开源，欢迎贡献代码或提出建议。
+</Callout>
+
