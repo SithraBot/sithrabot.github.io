@@ -28,7 +28,7 @@ export default function HomePage() {
         </Card>
         <Card title="动态插件系统" icon={<Puzzle className="text-purple-400" />} className="text-left">
           <p className="text-fd-muted-foreground">
-            基于 ioevent 的动态插件系统，支持插件的热插拔和动态加载，让功能模块化、分发和获取变得简单高效。
+            基于 ioevent 的动态插件系统，即插即用，无需重新编译主程序，让功能模块化、分发和获取变得简单高效。
           </p>
         </Card>
       </div>
