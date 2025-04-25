@@ -5,7 +5,7 @@ import { Zap, Code, Package, Puzzle } from 'lucide-react';
 export default function HomePage() {
   return (
     <main className="flex flex-1 flex-col justify-center items-center px-4">
-      <Image src="/icon.png" alt="SithraRS" width={100} height={100} className='rounded-full mb-4' />
+      <Image src="/icon.png" alt="SithraRS" width={100} height={100} className='rounded-full my-4 mt-8 md:mt-4' />
       <h1 className="mb-4 text-2xl font-bold">SithraRS</h1>
       <p className="text-fd-muted-foreground mb-12 max-w-2xl text-center">
         基于 Rust 打造的高性能 OneBot 机器人框架，为您的聊天机器人提供强大支持。
