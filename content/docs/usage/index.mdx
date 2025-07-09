@@ -3,90 +3,127 @@ title: 快速上手
 description: 在几分钟内部署您的 sithra-rs 机器人
 ---
 
-import { Steps } from 'fumadocs-ui/components/steps';
-import { Callout } from 'fumadocs-ui/components/callout';
-import { Files, File, Folder } from 'fumadocs-ui/components/files';
-import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
-import { GithubInfo } from 'fumadocs-ui/components/github-info';
-import { Card } from 'fumadocs-ui/components/card';
+import { Steps, Step } from "fumadocs-ui/components/steps";
+import { Callout } from "fumadocs-ui/components/callout";
+import { Files, File, Folder } from "fumadocs-ui/components/files";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { GithubInfo } from "fumadocs-ui/components/github-info";
+import { Terminal, Download, FileArchive, FileCog, Play } from "lucide-react";
 
-sithra-rs 是一个开源的、基于 Rust 的 OneBot 多功能聊天机器人框架。它支持跨平台部署，包括但不限于 Windows、Linux、macOS 和 Android。
+欢迎使用 sithra-rs！它是一个基于 Rust 构建的、开源且功能强大的多功能聊天机器人框架。
+
+得益于 Rust 的跨平台能力，sithra-rs 可以轻松部署在 Windows, Linux, macOS 等多种操作系统上。
+
+其核心的插件化设计，让您可以按需扩展，打造专属的机器人。
+
+本篇文档将引导您在几分钟内完成 sithra-rs 的下载、配置和启动。
 
 ## 系统要求
 
-目前官方提供以下平台的预编译二进制文件：
+为了方便用户，我们为以下主流平台提供了预编译的二进制文件。您可以直接下载并运行，无需手动编译。
 
-- [x] Windows x86-64
-- [x] Linux x86-64
+- [x] Linux (x86-64)
+- [ ] Windows (x86-64)
+- [ ] macOS (x86-64)
+- [ ] macOS (ARM64)
 
-其他平台需要通过源码自行编译。
-
-## 安装步骤
-
-### 下载安装包
-
-从 [GitHub Releases](https://github.com/SithraBot/sithra-rs/releases) 获取最新版本的 sithra-rs。
-
-### 解压文件
-
-将下载的压缩包解压到任意目录。建议创建一个专门的文件夹，因为程序会在工作目录生成必要的配置文件。
-
-<Files>
-  <Folder name="sithra-rs" defaultOpen>
-    <File name="sithra-rs.exe" />
-    <File name="config.toml" />
-    <Folder name="plugins">
-      <File name="example" />
-    </Folder>
-  </Folder>
-</Files>
-
-### 配置文件
-
-首次运行时，sithra-rs 会自动生成 `config.toml` 配置文件。您需要根据实际情况修改以下配置项：
-
-```toml
-[base]
-# OneBot 服务器的 WebSocket 地址
-ws-url = "ws://localhost:8084"
-
-# 日志级别: debug, info, warn, error, trace
-log-level = "info"
-
-# 机器人账号
-self-id = 1234567890
-```
-
-<Callout type="info">
-  请务必确认 `ws-url` 配置项是否正确，否则将无法正常工作。
-
-  当前 sithra-rs 仅支持 OneBot 11 正向 WebSocket 协议。
-  
-  请勿使用其他协议，否则将无法正常工作。
+<Callout title="其他平台">
+  如果您的操作系统或 CPU 架构不在上述列表内，您需要从源代码手动编译
+  sithra-rs。请参考下文的 [从源码编译](#2-从源码编译) 部分。
 </Callout>
 
-### 启动服务
+## 1. 下载与部署
 
-<Tabs items={['Windows', 'Linux/macOS']}>
+<Steps>
+<Step icon={<Download />} title="从 GitHub 下载">
+  前往 [GitHub Releases](https://github.com/SithraBot/sithra-rs/releases) 页面，根据您的操作系统下载最新版本的 sithra-rs 压缩包。
+</Step>
+<Step icon={<FileArchive />} title="解压文件">
+  将下载的压缩包解压到一个您喜欢的目录。我们建议您为 sithra-rs 创建一个独立的文件夹，因为程序后续会在其工作目录下生成配置文件和插件数据。
+
+解压后，您的目录结构应该如下所示：
+
+  <Files>
+    <Folder name="sithra-rs" defaultOpen>
+      <File name="sithra-rs.exe" />
+      <File name="config.toml" />
+      <Folder name="plugins">
+        <File name="example" />
+      </Folder>
+    </Folder>
+  </Files>
+</Step>
+<Step icon={<FileCog />} title="创建配置文件">
+  首次运行前，请确保 `config.toml` 文件存在于 sithra-rs 的运行目录中。sithra-rs 依赖此文件来加载和配置插件。
+
+<Callout type="warn" title="注意">
+  如果 sithra-rs 在启动时没有找到 `config.toml` 文件，程序将会自动退出。
+</Callout>
+
+关于如何编写配置文件，请[参考下一部分：编写配置项](/docs/usage/config)。
+
+</Step>
+<Step icon={<Play />} title="启动服务">
+  一切就绪！现在您可以启动 sithra-rs 了。
+
+<Tabs items={["Windows", "Linux/macOS"]}>
+  <Tab>在终端中执行以下命令： ```bash .\sithra-rs.exe ```</Tab>
   <Tab>
-    ```bash
-    .\sithra-rs.exe
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    chmod +x ./sithra-rs
-    ./sithra-rs
-    ```
+    首先，为文件添加可执行权限，然后运行它： ```bash chmod +x ./sithra-rs
+    ./sithra-rs ```
   </Tab>
 </Tabs>
+
+如果一切顺利，您将在终端看到 sithra-rs 成功启动的日志信息。
+
+</Step>
+</Steps>
+
+## 2. 从源码编译
+
+如果您是开发者，或者您需要在非官方支持的平台上运行 sithra-rs，您可以选择从源代码进行编译。
+
+<Steps>
+  <Step>
+    ### 准备 Rust 环境
+
+    请确保您的系统中已安装 Rust
+    工具链。如果尚未安装，可以参考 [Rust
+    官方文档](https://www.rust-lang.org/tools/install) 进行安装。
+
+  </Step>
+  <Step>
+    ### 克隆源代码
+
+    使用 Git 克隆 sithra-rs 的代码仓库：
+
+    ```shell
+    git clone https://github.com/SithraBot/sithra-rs.git cd sithra-rs
+    ```
+
+  </Step>
+  <Step>
+    ### 编译项目
+
+    在项目根目录下，执行 `cargo build` 命令进行编译。我们推荐使用
+    `--release` 参数来构建优化后的版本：
+
+    ```shell
+    cargo build --release
+    ```
+
+    编译完成后，生成的可执行文件将位于 `target/release/` 目录下。
+
+  </Step>
+</Steps>
 
 ## 获取帮助
 
 <div className="not-prose mt-0 flex flex-col gap-4">
   <GithubInfo owner="SithraBot" repo="sithra-rs" />
   <p className="text-sm text-fd-muted-foreground">
-    如果您在使用过程中遇到任何问题，欢迎在 GitHub Issues 提出。
+    如果您在使用过程中遇到任何问题，或有任何功能建议，欢迎随时在 GitHub Issues
+    中提出。
   </p>
 </div>
 

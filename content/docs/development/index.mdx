@@ -1,127 +1,407 @@
 ---
-title: 开发指南
+title: 快速入门
 description: 学习如何开发 sithra-rs 插件
 ---
 
-import { Steps, Step } from 'fumadocs-ui/components/steps';
-import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
-import { Callout } from 'fumadocs-ui/components/callout';
-import { Folder, File, Files } from 'fumadocs-ui/components/files';
-import { Code2, Puzzle, BookOpen } from 'lucide-react';
+import { Steps, Step } from "fumadocs-ui/components/steps";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Callout } from "fumadocs-ui/components/callout";
+import { Folder, File, Files } from "fumadocs-ui/components/files";
+import {
+  Code2,
+  Puzzle,
+  BookOpen,
+  Terminal,
+  GitBranch,
+  Check,
+  FileCode,
+  Zap,
+  Info,
+} from "lucide-react";
+
+# sithra-rs 插件开发指南
+
+<Callout type="info" icon={<Info className="h-4 w-4" />}>
+  sithra-rs 是一个基于 Rust
+  的现代化、高性能、可扩展的机器人框架。通过本指南，您将学习如何开发自己的插件来扩展框架功能。
+</Callout>
 
 ## 开发前的准备
 
 <div className="flex items-center gap-2 mb-4">
-  <Code2 className="w-5 h-5" />
+  <Code2 className="w-5 h-5 text-primary" />
   <span className="text-lg font-medium">技术要求</span>
 </div>
 
-sithra-rs 是一个基于 Rust 的现代化、高性能、可扩展的机器人框架。要开发 sithra-rs 插件，您需要:
+要开始 sithra-rs 插件开发，您需要具备以下技术知识：
 
-- 掌握 Rust 语言基础语法
-- 了解 Rust 异步编程
-- 熟悉 sithra-rs 的架构设计
+<Cards>
+  <Card title="基础要求">
+    <ul className="list-disc list-inside space-y-1">
+      <li>Rust 语言基础语法</li>
+      <li>了解基本的命令行操作</li>
+      <li>熟悉 Cargo 包管理器</li>
+    </ul>
+  </Card>
 
-<Callout type="info" icon={<BookOpen />}>
-  不用担心！即使您是 Rust 新手，只要掌握基础语法和异步编程概念，就可以开始开发插件了。
+  <Card title="进阶技能">
+    <ul className="list-disc list-inside space-y-1">
+      <li>Rust 异步编程（async/await）</li>
+      <li>sithra-rs 架构设计</li>
+      <li>消息处理模型</li>
+    </ul>
+  </Card>
+</Cards>
+
+<Callout type="info" icon={<BookOpen className="h-4 w-4" />}>
+  不用担心！即使您是 Rust
+  新手，只要掌握基础语法和异步编程概念，就可以开始开发插件了。
   我们提供了详细的示例代码和文档来帮助您快速上手。
 </Callout>
 
 ## 插件系统概述
 
 <div className="flex items-center gap-2 mb-4">
-  <Puzzle className="w-5 h-5" />
-  <span className="text-lg font-medium">基于 IOEVENT 的插件架构</span>
+  <Puzzle className="w-5 h-5 text-primary" />
+  <span className="text-lg font-medium">基于 STDIO 的插件架构</span>
 </div>
 
-sithra-rs 的插件系统基于 [IOEVENT](https://github.com/BERADQ/ioevent) 构建，每个插件都是独立的二进制程序。这种设计提供了:
+sithra-rs 采用了一种基于 STDIO 通信的插件架构，使插件开发变得简单而强大：
 
-- 完全的事件处理能力
-- 灵活的过程调用机制
-- 插件间的服务提供与调用
-- 可扩展的过程模型定义
+<Cards>
+  <Card title={<div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />独立二进制</div>}>
+    每个插件都是独立的二进制程序，提供了更好的隔离性和稳定性
+  </Card>
+
+<Card
+  title={
+    <div className="flex items-center gap-2">
+      <Check className="w-4 h-4 text-green-500" />
+      灵活调用机制
+    </div>
+  }
+>
+  支持灵活的过程调用机制，便于插件间通信
+</Card>
+
+<Card
+  title={
+    <div className="flex items-center gap-2">
+      <Check className="w-4 h-4 text-green-500" />
+      服务提供与调用
+    </div>
+  }
+>
+  插件间可以相互提供服务和调用功能，构建复杂应用
+</Card>
+
+  <Card title={<div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" />语言无关接口</div>}>
+    使用标准输入输出作为接口，支持多语言插件开发
+  </Card>
+</Cards>
 
 ## 开发流程
+
+<div className="flex items-center gap-2 mb-4">
+  <FileCode className="w-5 h-5 text-primary" />
+  <span className="text-lg font-medium">从零创建插件</span>
+</div>
 
 <Steps>
 <Step>
 ### 创建项目
 
-使用 Cargo 创建新项目:
+使用 Cargo 创建新的 Rust 项目：
 
 ```bash
-cargo new my_plugin
-cd my_plugin
+cargo new my-plugin
+cd my-plugin
 ```
+
+这将创建一个基本的 Rust 项目结构，包含 `Cargo.toml` 和 `src/main.rs` 文件。
+
 </Step>
 
 <Step>
 ### 添加依赖
 
-编辑 `Cargo.toml`:
+编辑 `Cargo.toml` 文件，添加必要的依赖：
 
 ```toml
 [package]
-name = "my_plugin"
+name = "my-plugin"
 version = "0.1.0"
 edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+description = "A plugin for sithra-rs"
 
 [dependencies]
-ioevent = { git = "https://github.com/BERADQ/ioevent.git" }
-sithra_common = { git = "https://github.com/SithraBot/sithra-rs.git" }
+# sithra-rs 核心库
+sithra-kit = { git = "https://github.com/SithraBot/sithra-rs.git" }
+# 异步运行时
 tokio = { version = "1", features = ["full"] }
+# 日志库
 log = "0.4"
+# 可选：序列化/反序列化库
+serde = { version = "1.0", features = ["derive"] }
+# 可选：错误处理库
+anyhow = "1.0"
 ```
+
+这些依赖将帮助您开发插件的核心功能。
+
 </Step>
 
 <Step>
 ### 实现插件逻辑
 
-创建 `src/main.rs`:
+编辑 `src/main.rs` 文件，实现您的插件逻辑。以下是一个简单的 Echo 插件示例：
 
 ```rust
-use event::MessageEventFlattened as Message;
-use ioevent::prelude::*;
-use sithra_common::prelude::*;
-use log::info;
+use sithra_kit::{
+    plugin::Plugin,
+    server::extract::payload::Payload,
+    types::message::{Message, SendMessage, common::CommonSegment},
+};
 
-// 定义订阅者列表
-const SUBSCRIBERS: &[ioevent::Subscriber<CommonState>] = &[
-    create_subscriber!(echo_msg)
-];
+/// 插件入口点
+#[tokio::main]
+async fn main() {
+    // 1. 初始化插件
+    let (plugin, ()) = Plugin::new().await.unwrap();
 
-// 实现消息处理函数
-#[subscriber]
-async fn echo_msg(state: State<CommonState>, msg: Message) -> Result {
-    // 检查消息前缀
-    if msg.starts_with("echo ") {
-        // 记录日志
-        info!("echo 插件收到{}发送的消息", msg.sender.call_name());
-        
-        // 提取消息内容
-        let message = msg.message.clone().trim_start_matches("echo ");
-        
-        // 回复消息
-        msg.reply(&state, message).await?;
+    // 2. 注册消息处理路由
+    let plugin = plugin.map(|r| r.route_typed(Message::on(echo)));
+
+    // 3. 日志输出
+    log::info!("Echo plugin started");
+
+    // 4. 运行插件，直到收到终止信号
+    tokio::select! {
+        _ = plugin.run().join_all() => {}
+        _ = tokio::signal::ctrl_c() => {}
     }
-    Ok(())
 }
 
-// 插件入口函数
-#[sithra_common::main(subscribers = SUBSCRIBERS, state = CommonState)]
-async fn main(_effect_wright: &ioevent::EffectWright) {
-    info!("echo 示例插件启动成功");
+/// 处理 echo 命令的函数
+///
+/// 当收到以 "echo " 开头的消息时，返回去掉 "echo " 前缀的内容
+async fn echo(Payload(msg): Payload<Message<CommonSegment>>) -> Option<SendMessage> {
+    // 1. 收集所有文本片段，合并为一个字符串
+    let text = msg.content.iter().fold(String::new(), |f, s| {
+        if let CommonSegment::Text(text) = s {
+            f + text
+        } else {
+            f
+        }
+    });
+
+    // 2. 检查消息是否以 "echo " 开头，如果不是则返回 None
+    let text = text.strip_prefix("echo ")?.to_owned();
+
+    // 3. 记录接收到的消息
+    log::info!("echo received: {text}");
+
+    // 4. 准备回复消息
+    let Message { mut content, .. } = msg;
+
+    // 5. 修改原始消息内容
+    {
+        let first = content.first_mut()?;
+        *first = CommonSegment::text(&text);
+    }
+
+    // 6. 返回要发送的消息
+    Some(SendMessage::new(content))
 }
 ```
+
+此示例创建了一个简单的插件，当接收到以 "echo " 开头的消息时，会返回去掉前缀的内容。
+
 </Step>
 
 <Step>
 ### 编译运行
 
+使用 Cargo 编译您的插件：
+
 ```bash
 cargo build --release
 ```
 
-编译后的插件文件位于 `target/release` 目录。
+编译后的插件文件位于 `target/release` 目录。您可以将此二进制文件复制到 sithra-rs 的插件目录中使用。
+
+<Callout type="info" icon={<Zap className="h-4 w-4" />}>
+  编译为 release 模式会大幅提高插件性能，但编译时间较长。开发过程中可使用 <code>cargo build</code> 进行快速编译测试。
+</Callout>
 </Step>
 </Steps>
+
+## 使用工作区开发
+
+<div className="flex items-center gap-2 mb-4">
+  <GitBranch className="w-5 h-5 text-primary" />
+  <span className="text-lg font-medium">在 sithra-rs 工作区中开发</span>
+</div>
+
+使用工作区开发可以更方便地集成和测试您的插件：
+
+<Steps>
+<Step>
+### 克隆 sithra-rs 仓库
+
+```bash
+git clone https://github.com/SithraBot/sithra-rs.git
+cd sithra-rs
+```
+
+</Step>
+
+<Step>
+### 了解项目结构
+
+sithra-rs 项目结构如下 (已省略不重要的信息)：
+
+<Files className="mb-5">
+  <Folder name="crates"></Folder>
+  <Folder name="plugins" defaultOpen>
+    <Folder name="echo" />
+    <Folder name="other-plugins" />
+  </Folder>
+  <Folder name="adapters" defaultOpen>
+    <Folder name="onebot" />
+    <Folder name="discord" />
+  </Folder>
+  <File name="Cargo.toml" />
+  <File name="justfile" />
+</Files>
+
+<Cards>
+  <Card title="crates">
+    存放 sithra-rs 核心代码和库
+  </Card>
+
+<Card title="plugins">存放各种插件的代码</Card>
+
+<Card title="adapters">存放平台适配器的代码</Card>
+
+  <Card title="justfile">
+    实用脚本
+  </Card>
+</Cards>
+</Step>
+
+<Step>
+### 创建自己的插件
+
+在 plugins 目录中创建新插件：
+
+```bash
+cd plugins
+cargo new my-custom-plugin
+cd my-custom-plugin
+```
+
+编辑插件的 `Cargo.toml`，确保引用了正确的依赖：
+
+```toml
+[package]
+name = "my-custom-plugin"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sithra-kit.workspace = true
+tokio.workspace = true
+log.workspace = true
+```
+
+注意这里使用 `workspace` 指定了与工作区共享依赖，而不是 git 仓库。
+
+</Step>
+
+<Step>
+### 编写插件代码
+
+参考前面的 [实现插件逻辑](#实现插件逻辑) 部分，编写您的插件代码。
+
+<Callout type="info">
+  在工作区中开发时，可以直接参考其他插件的实现，位于 <code>plugins</code> 目录下。这些示例可以为您提供更多灵感和最佳实践。
+</Callout>
+</Step>
+
+<Step>
+### 配置与运行
+
+1. 安装 just 命令工具（用于简化运行命令）：
+
+```bash
+cargo install just
+```
+
+2. 创建或编辑配置文件：
+
+```bash
+touch config.toml
+nvim config.toml
+```
+
+3. 在配置文件中添加您的插件：
+
+```toml
+[my-custom-plugin]
+path = "./target/debug/my-custom-plugin"
+```
+
+4. 运行 sithra-rs 和您的插件：
+
+```bash
+just run
+```
+
+这将启动 sithra-rs 框架和您配置的所有插件。
+
+</Step>
+</Steps>
+
+## 调试与测试
+
+<div className="flex items-center gap-2 mb-4">
+  <Terminal className="w-5 h-5 text-primary" />
+  <span className="text-lg font-medium">插件调试技巧</span>
+</div>
+
+开发过程中，有效的调试和测试是确保插件质量的关键：
+
+<Cards>
+  <Card title="日志输出">
+    使用 <code>log::debug!</code>, <code>log::info!</code> 等宏在关键位置添加日志，帮助跟踪插件运行状态
+  </Card>
+
+<Card title="单元测试">为插件逻辑编写单元测试，确保各个函数按预期工作</Card>
+
+<Card title="集成测试">创建模拟消息和事件，测试插件的整体处理流程</Card>
+
+  <Card title="错误处理">
+    使用 <code>anyhow</code> 或 <code>thiserror</code> 库进行错误处理，确保插件在异常情况下不会崩溃
+  </Card>
+</Cards>
+
+<Callout type="info" icon={<Terminal className="h-4 w-4" />}>
+  在开发模式下，可以使用 <code>RUST_LOG=debug just run</code> 命令启动
+  sithra-rs，以显示更详细的调试信息。
+</Callout>
+
+## 下一步
+
+恭喜您完成了 sithra-rs 插件开发快速指南！接下来，您可以：
+
+1. 查看[示例插件代码](https://github.com/SithraBot/sithra-rs/tree/main/plugins)获取更多灵感
+2. 了解[配置选项](/docs/usage/config)来自定义插件行为
+3. 探索[适配器开发](/docs/development/adapters)以支持更多平台
+4. 加入我们的[QQ 群聊: 948180922](https://qm.qq.com/q/8XYQrdOPGU)分享您的创意和问题
+
+<Callout type="info">
+  我们期待看到您创建的精彩插件！如果您开发了有用的插件，欢迎提交 Pull Request
+  贡献给社区。
+</Callout>

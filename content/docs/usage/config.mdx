@@ -1,0 +1,149 @@
+---
+title: 编写配置项
+description: 了解如何配置 sithra-rs 机器人
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Files, File, Folder } from "fumadocs-ui/components/files";
+import { PenLine } from "lucide-react";
+
+`config.toml` 是 sithra-rs 的核心配置文件，用于管理和配置所有插件。正确配置此文件是保证机器人正常运行的关键。
+
+## 什么是 TOML?
+
+sithra-rs 使用 [TOML](https://toml.io/zh-cn/) 作为其配置文件的格式。TOML 的全称是 "Tom's Obvious, Minimal Language" (Tom 的简洁最小化语言)，它的设计目标是成为一个易于阅读的配置文件格式。
+
+<Callout title="为什么选择 TOML?" icon={<PenLine />}>
+  TOML 格式清晰、语义明确，非常适合用于编写配置文件。它的结构与 sithra-rs
+  的插件化设计理念不谋而合，能够让您以一种优雅且高效的方式管理复杂的插件配置。
+</Callout>
+
+在开始编写配置前，建议您花几分钟时间快速浏览 [TOML 官方文档](https://toml.io/zh-cn/)，了解其基本语法。
+
+## 配置文件结构
+
+配置文件 `config.toml` 必须放置在 `sithra-rs` 主程序所在的运行目录下。
+
+<Files>
+  <Folder name="sithra-rs" defaultOpen>
+    <File name="config.toml" />
+    <File name="sithra-rs.exe" />
+    <Folder name="plugins">
+      <File name="echo.exe" />
+      <File name="headless.exe" />
+    </Folder>
+  </Folder>
+</Files>
+
+`config.toml` 的核心是一个 **TOML 表 (table)**，您可以将其理解为一个字典或 Map。其中：
+
+- **键 (Key)**: 键的名称可以自定义，通常是插件的名称，便于识别和管理。
+- **值 (Value)**: 每个键对应的值是一个包含以下三个字段的表：
+  - `path` (字符串): 指向插件可执行文件的 **相对路径** 或 **绝对路径**。
+  - `args` (字符串数组): 插件启动时需要传递的命令行参数。
+  - `config` (内联表): 传递给插件的专属配置项，其内容和结构由插件自身定义。
+
+### 基础示例
+
+假设我们有一个 `echo` 插件，它的可执行文件位于 `plugins/echo.exe`。一个最基础的配置如下：
+
+```toml
+# config.toml
+
+[echo]
+path = "plugins/echo.exe"
+args = [] # 可省略不写
+config = {} # 可省略不写
+```
+
+在这个例子中：
+
+- `[echo]` 是我们为插件定义的键。
+- `path` 指向了插件的文件位置。
+- `args` 和 `config` 均为空，因为 `echo` 插件不需要额外的启动参数和配置。
+
+## 优雅地编写配置
+
+TOML 提供了丰富的语法特性，让您能够灵活地组织配置。
+
+### 示例：配置 `headless` 插件
+
+`headless` 插件是一个无头浏览器服务，它需要一些特定的配置，例如 WebDriver 的地址和要使用的浏览器类型 (仅供参考)。
+
+`headless` 插件当前还并未开发，此处配置仅作示例。
+
+<Tabs items={['松散写法 (推荐)', '紧凑写法']}>
+  <Tab>
+    ```toml
+    # config.toml
+
+    # 使用 TOML 的点分隔键 (dotted keys) 来组织配置
+    # 这种写法更加紧凑和清晰
+    [headless]
+    path = "plugins/headless.exe"
+    args = ["--port", "9515"] # 为插件传递启动参数
+
+    # 直接在主键下定义 config 的子键
+    [headless.config]
+    webdriver_url = "http://127.0.0.1:9515"
+    browser_type = "Chrome"
+    ```
+
+  </Tab>
+  <Tab>
+    ```toml
+    # config.toml
+
+    # 使用内联表 (inline table) 来定义 config
+    # 当配置项较少时也很方便
+    [headless]
+    path = "plugins/headless.exe"
+    args = ["--port", "9515"]
+    config = { webdriver_url = "http://127.0.0.1:9515", browser_type = "Chrome" }
+    ```
+
+  </Tab>
+</Tabs>
+
+<Callout>
+  `config` 表中的所有内容都会被序列化并作为标准输入 (stdin)
+  传递给插件。插件可以读取这些数据来完成初始化。因此，`config`
+  中具体需要哪些字段，完全由 **插件开发者**
+  决定。请参考您所使用的插件的文档来获取详细信息。
+</Callout>
+
+### 完整配置示例
+
+一个包含多个插件的 `config.toml` 文件可能如下所示 (不可用, 仅供参考)：
+
+```toml
+# sithra-rs 完整配置文件示例
+
+# Echo 插件，无需额外配置
+[echo]
+path = "plugins/echo.exe"
+
+# Headless 插件，提供网页截图等服务
+[headless]
+path = "plugins/headless.exe"
+
+# Headless 插件的专属配置
+[headless.config]
+webdriver_url = "http://127.0.0.1:9515"
+browser_type = "Chrome"
+window_size = { width = 1920, height = 1080 } # config 中也可以包含内联表
+
+# MCTools 插件，依赖 headless 插件
+[mctools]
+path = "plugins/mc-tools.exe"
+
+# MCTools 插件的专属配置
+[mctools.config]
+# 告诉 mctools 插件 headless 服务的地址
+headless_url = "http://127.0.0.1:8080/headless"
+# 缓存设置
+cache_duration = 3600 # 单位：秒
+```
+
+通过这种方式，您可以清晰地管理每一个插件的路径、启动参数和独立的配置信息，同时保持整个 `config.toml` 文件的整洁和可读性。

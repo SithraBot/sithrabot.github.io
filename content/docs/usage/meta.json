@@ -1,11 +1,12 @@
 {
-    "title": "使用文档",
-    "description": "在您的设备上部署 sithra-rs",
-    "icon": "Boxes",
-    "root": true,
-    "pages": [
-        "---安装部署---",
-        "index",
-        "plugin"
-    ]
+  "title": "使用文档",
+  "description": "在您的设备上部署 sithra-rs",
+  "icon": "Boxes",
+  "root": true,
+  "pages": [
+    "---安装部署---",
+    "index",
+    "plugin",
+    "config"
+  ]
 }
