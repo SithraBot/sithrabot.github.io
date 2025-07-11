@@ -9,8 +9,6 @@ import { Folder, File, Files } from 'fumadocs-ui/components/files';
 import { Card, Cards } from 'fumadocs-ui/components/card';
 import { FileCode, Zap, Package, AlertTriangle, CheckCircle, BookOpen, Info, Shield } from 'lucide-react';
 
-# sithra-rs 插件开发规范
-
 <Callout type="info" icon={<Info className="h-4 w-4" />}>
   本指南定义了开发 sithra-rs 插件时应遵循的最佳实践和标准。遵循这些规范将有助于确保您的插件稳定可靠，并与 sithra-rs 生态系统和谐共存。
 </Callout>
@@ -249,7 +247,7 @@ let result = api_call().await.expect("API调用失败");
 
 插件版本必须遵循 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/) (SemVer) 规范。版本号格式为: `主版本号.次版本号.修订号`。
 
-  <Card title="修订号 (x.y.Z)" className="mb-6">
+  <Card title="修订号 (x.y.Z)" className="mb-4">
     当进行向下兼容的缺陷修复时，递增修订号：
 
     - 修复 bug
@@ -259,7 +257,7 @@ let result = api_call().await.expect("API调用失败");
 
   </Card>
 
-  <Card title="次版本号 (x.Y.z)" className="mb-6">
+  <Card title="次版本号 (x.Y.z)" className="mb-4">
     当增加向下兼容的新功能时，递增次版本号：
 
     - 为公共结构添加新字段
@@ -269,7 +267,7 @@ let result = api_call().await.expect("API调用失败");
 
   </Card>
 
-  <Card title="主版本号 (X.y.z)" className="mb-6">
+  <Card title="主版本号 (X.y.z)" className="mb-4">
     当进行不兼容的更新时，必须递增主版本号：
 
     - 删除或重命名公共结构的已有字段
@@ -382,7 +380,7 @@ version = "1.2.3"  # 主版本.次版本.修订号
 
 插件安全是 sithra-rs 生态系统的重要组成部分。开发者应遵循这些安全最佳实践：
 
-  <Card title="安全处理凭证" className="mb-6">
+  <Card title="安全处理凭证" className="mb-4">
     妥善处理 API 密钥、令牌等敏感信息：
 
     - 不要在代码中硬编码凭证
@@ -391,7 +389,7 @@ version = "1.2.3"  # 主版本.次版本.修订号
 
   </Card>
 
-  <Card title="依赖管理" className="mb-6">
+  <Card title="依赖管理" className="mb-4">
     定期更新依赖以修复安全漏洞：
 
     ```bash

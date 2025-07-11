@@ -4,7 +4,10 @@
     "icon": "Hammer",
     "root": true,
     "pages": [
+        "---快速开始---",
         "index",
-        "standards"
+        "standards",
+        "---逐步深入---",
+        "initialize"
     ]
 }

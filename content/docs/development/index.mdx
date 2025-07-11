@@ -19,8 +19,6 @@ import {
   Info,
 } from "lucide-react";
 
-# sithra-rs 插件开发指南
-
 <Callout type="info" icon={<Info className="h-4 w-4" />}>
   sithra-rs 是一个基于 Rust
   的现代化、高性能、可扩展的机器人框架。通过本指南，您将学习如何开发自己的插件来扩展框架功能。
@@ -168,7 +166,7 @@ use sithra_kit::{
 #[tokio::main]
 async fn main() {
     // 1. 初始化插件
-    let (plugin, ()) = Plugin::new().await.unwrap();
+    let (plugin, _) = Plugin::new::<()>().await.unwrap();
 
     // 2. 注册消息处理路由
     let plugin = plugin.map(|r| r.route_typed(Message::on(echo)));
@@ -187,14 +185,8 @@ async fn main() {
 ///
 /// 当收到以 "echo " 开头的消息时，返回去掉 "echo " 前缀的内容
 async fn echo(Payload(msg): Payload<Message<CommonSegment>>) -> Option<SendMessage> {
-    // 1. 收集所有文本片段，合并为一个字符串
-    let text = msg.content.iter().fold(String::new(), |f, s| {
-        if let CommonSegment::Text(text) = s {
-            f + text
-        } else {
-            f
-        }
-    });
+    // 1. 消息是否为文本开头，如果是则获取文本，否则返回 None
+    let text = msg.content.first()?.text_opt()?;
 
     // 2. 检查消息是否以 "echo " 开头，如果不是则返回 None
     let text = text.strip_prefix("echo ")?.to_owned();

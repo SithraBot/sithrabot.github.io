@@ -1,0 +1,368 @@
+---
+title: 插件初始化
+description: 关于插件初始化，您需要知道的一切
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Card, Cards } from "fumadocs-ui/components/card";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+import { Bot, Code, Puzzle, ArrowDown, Terminal, Workflow, Layers, Database } from "lucide-react";
+
+<Callout type="info" icon={<Bot className="h-4 w-4" />}>
+  ### 前情提要
+
+我们在 [快速入门](/docs/development#实现插件逻辑) 中已经介绍了一个插件的基本结构，
+其中就包含了初始化插件的代码。接下来我们将以循序渐进的方式快速讲解插件初始化的具体知识点。
+
+</Callout>
+
+## 基础概念
+
+<div className="flex items-center gap-2 mb-4">
+  <Code className="w-5 h-5 text-primary" />
+  <span className="text-lg font-medium">初始化流程概览</span>
+</div>
+
+### 基础初始化
+
+让我们首先观察最基本的插件初始化代码：
+
+```rust
+#[tokio::main]
+async fn main() {
+    let (plugin, Initialize { .. }) = Plugin::new::<()>().await.unwrap();
+}
+```
+
+在这段代码中：
+
+<Card title="Plugin::new" className="mb-4">
+`Plugin` 结构体提供了插件的初始化方法，其中 `new` 方法用于创建一个新的插件实例，并进行初始化操作。
+</Card>
+
+<Card title="返回值" className="mb-4">
+返回一个元组，其中第一个元素是插件实例，第二个元素是初始化结果 `Initialize` 结构体。
+</Card>
+
+<Card title="泛型参数">
+`new::<()>` 中的 `()` 表示不需要特定的配置类型，使用空元组作为配置。
+</Card>
+
+### Initialize 结构体
+
+初始化结果封装在 `Initialize` 结构体中，它的定义如下：
+
+```rust
+pub struct Initialize<C> {
+    pub config:    C,
+    pub data_path: String,
+}
+```
+
+<Callout>
+
+这个结构体包含了两个重要字段：
+
+- `config` 字段表示插件的配置信息，可以为任何可反序列化类型
+- `data_path` 字段表示插件的数据路径，我们约定插件的所有数据都存储在该路径下
+
+</Callout>
+
+### 自定义插件配置
+
+通过为 `Plugin::new` 指定泛型参数，我们可以定义插件专属的配置类型：
+
+```rust
+struct Config {
+  admins: Vec<String>,
+}
+
+#[tokio::main]
+async fn main() {
+    let (
+        plugin,
+        Initialize { config, .. }
+    ) = Plugin::new::<Config>().await.unwrap();
+
+    // 现在 config 是 Config 类型，可以访问 admins 字段
+    for admin in &config.admins {
+        log::info!("管理员: {admin}");
+    }
+}
+```
+
+### 运行插件
+
+初始化完成后，我们需要启动插件服务并处理退出信号：
+
+```rust
+tokio::select! {
+    _ = plugin.run().join_all() => {
+        // 插件出现内部错误则会执行该分支
+    }
+    _ = tokio::signal::ctrl_c() => {
+        // 插件停止
+        // 主要用于优雅地退出插件
+        // 比方说关闭数据库连接，释放资源等。
+    }
+}
+```
+
+<Callout type="warn" icon={<Terminal className="h-4 w-4" />}>
+
+当插件退出时，框架内部会直接丢弃插件实例，析构时插件会被 kill。
+
+因此在 `tokio::signal::ctrl_c()` 分支中**无法使用**任何需要和框架通信的方法/函数，例如 `log::*`。
+
+</Callout>
+
+### 添加额外任务
+
+如果你的插件依赖于其他关键任务，可以将其添加到 `select` 宏中：
+
+```rust
+tokio::select! {
+    _ = connection_task => {
+        log::error!("Connection manager task exited unexpectedly.");
+    }
+    _ = plugin.run().join_all() => {}
+    _ = tokio::signal::ctrl_c() => {
+        log::info!("Shutting down adapter..."); // 这里的 log 并不会执行
+    }
+}
+```
+
+## 深入原理
+
+<div className="flex items-center gap-2 mb-4">
+  <Layers className="w-5 h-5 text-primary" />
+  <span className="text-lg font-medium">Plugin 内部实现</span>
+</div>
+
+`Plugin` 结构体是一个高级封装，适合一般插件开发者使用。但有时我们需要更精细的控制，因此让我们深入了解其内部实现。
+
+### Plugin 结构体剖析
+
+`Plugin` 结构体的定义如下：
+
+```rust
+pub struct Plugin {
+    peer:   Peer,
+    server: Server,
+    router: Router,
+}
+```
+
+<Card title="peer" icon={<ArrowDown className="h-4 w-4" />} className="mb-4">
+  插件的对等节点，用于与框架进行通信
+</Card>
+
+<Card title="server" icon={<Workflow className="h-4 w-4" />} className="mb-4">
+  插件的服务端，用于处理请求和事件，同时还被用于发送请求并接收响应
+</Card>
+
+<Card title="router" icon={<Puzzle className="h-4 w-4" />}>
+  插件的路由表，用于管理插件的路由规则
+</Card>
+
+### Plugin::new 方法解析
+
+让我们拆解 `Plugin::new` 方法，了解其内部实现：
+
+```rust
+pub async fn new<Config>() -> Result<(Self, Initialize<Config>), PluginInitError>
+where
+    Config: for<'de> Deserialize<'de>,
+{
+    // 创建对等节点
+    let peer = Peer::new();
+    // 创建服务端
+    let server = Server::new();
+    // 创建路由表
+    let router = Router::new();
+    // 从对等节点创建帧序列
+    let mut framed = sithra_kit::transport::util::framed(peer);
+
+    // 执行初始化循环
+    let init = loop {
+        // 等待对等节点发送消息
+        let Some(msg) = <FramedPeer as StreamExt>::next(&mut framed).await else {
+            break Err(PluginInitError::ConnectionClosed);
+        };
+        if let Ok(msg) = msg {
+            let is_init = msg.path.as_ref().is_some_and(|p| p == Initialize::<Config>::path());
+            // 判断是否为初始化消息
+            if is_init {
+                let config = msg.payload::<Initialize<Config>>();
+                // 返回初始化消息
+                break config.map_err(PluginInitError::DeserializationError);
+            }
+        }
+    }?;
+
+    // 初始化日志
+    init_log(server.client().sink());
+
+    // 用不到帧序列了，我们换回对等节点
+    let peer = framed.into_inner();
+
+    // 返回实例
+    Ok((
+        Self {
+            peer,
+            server,
+            router,
+        },
+        init,
+    ))
+}
+```
+
+<Callout type="info" icon={<Database className="h-4 w-4" />}>
+
+初始化过程的关键步骤：
+
+1. 创建通信组件（对等节点、服务端、路由表）
+2. 等待框架发送初始化消息
+3. 解析配置信息
+4. 初始化日志系统
+5. 返回插件实例和初始化结果
+
+</Callout>
+
+### 运行原理
+
+`Plugin::run` 方法的实现相对简洁：
+
+```rust
+pub fn run(self) -> JoinSet<Result<(), ServerError>> {
+    let Self {
+        peer,
+        server,
+        router,
+    } = self;
+    // 分割对等节点为写入和读取部分
+    let (write, read) = peer.split();
+
+    // 将路由表作为服务，启动服务端
+    server.service(router).serve(write, read)
+}
+```
+
+这个方法将插件的核心组件拆分并组装为服务，使其能够处理请求和发送响应。
+
+## 无糖版实现
+
+<div className="flex items-center gap-2 mb-4">
+  <Code className="w-5 h-5 text-primary" />
+  <span className="text-lg font-medium">手动实现初始化流程</span>
+</div>
+
+<Tabs items={['基础版', '完整版']}>
+  <Tab>
+    如果您希望更精细地控制初始化过程，可以考虑不使用 `Plugin` 高级封装，而是手动实现初始化流程：
+
+    ```rust
+    // 创建对等节点
+    let peer = Peer::new();
+    // 创建服务端
+    let server = Server::new();
+    // 创建路由表
+    let router = Router::new();
+    // 从对等节点创建帧序列
+    let mut framed = sithra_kit::transport::util::framed(peer);
+
+    // 执行初始化循环
+    let init = loop {
+        // 等待对等节点发送消息
+        let Some(msg) = <FramedPeer as StreamExt>::next(&mut framed).await else {
+            break Err(PluginInitError::ConnectionClosed);
+        };
+        if let Ok(msg) = msg {
+            let is_init = msg.path.as_ref().is_some_and(|p| p == Initialize::<Config>::path());
+            // 判断是否为初始化消息
+            if is_init {
+                let config = msg.payload::<Initialize<Config>>();
+                // 返回初始化消息
+                break config.map_err(PluginInitError::DeserializationError);
+            }
+        }
+    }?;
+
+    // 初始化日志
+    init_log(server.client().sink());
+
+    // 用不到帧序列了，我们换回对等节点
+    let peer = framed.into_inner();
+    ```
+
+  </Tab>
+  <Tab>
+    以下是完整版的手动初始化和运行流程，包括服务启动和信号处理：
+
+    ```rust
+    // 创建对等节点
+    let peer = Peer::new();
+    // 创建服务端
+    let server = Server::new();
+    // 创建路由表
+    let router = Router::new();
+    // 从对等节点创建帧序列
+    let mut framed = sithra_kit::transport::util::framed(peer);
+
+    // 执行初始化循环
+    let init = loop {
+        // 等待对等节点发送消息
+        let Some(msg) = <FramedPeer as StreamExt>::next(&mut framed).await else {
+            break Err(PluginInitError::ConnectionClosed);
+        };
+        if let Ok(msg) = msg {
+            let is_init = msg.path.as_ref().is_some_and(|p| p == Initialize::<Config>::path());
+            // 判断是否为初始化消息
+            if is_init {
+                let config = msg.payload::<Initialize<Config>>();
+                // 返回初始化消息
+                break config.map_err(PluginInitError::DeserializationError);
+            }
+        }
+    }?;
+
+    // 初始化日志
+    init_log(server.client().sink());
+
+    // 用不到帧序列了，我们换回对等节点
+    let peer = framed.into_inner();
+
+    // 分割对等节点为写入和读取部分
+    let (write, read) = peer.split();
+
+    // 将路由表作为服务，启动服务端
+    let tasks = server.service(router).serve(write, read);
+
+    tokio::select! {
+        _ = tasks.join_all() => {
+            // 插件出现内部错误则会执行该分支
+        }
+        _ = tokio::signal::ctrl_c() => {
+            // 插件停止
+            // 主要用于优雅地退出插件
+            // 比方说关闭数据库连接，释放资源等。
+        }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+<Callout>
+  无糖版实现适合对框架有深入了解的开发者，或者需要特殊定制初始化流程的场景。对于大多数插件开发者，
+  推荐使用 `Plugin` 高级封装来简化开发过程。
+</Callout>
+
+## 下一步
+
+恭喜您已经深入了解了 sithra-rs 插件的初始化流程！接下来，您可以：
+
+- 了解如何[注册和处理路由](/docs/development/router)
+- 探索[内部服务](/docs/development/server)的实现和使用
