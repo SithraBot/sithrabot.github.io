@@ -9,8 +9,9 @@ import { Card, Cards } from "fumadocs-ui/components/card";
 import { Steps, Step } from "fumadocs-ui/components/steps";
 import { Bot, Code, Puzzle, ArrowDown, Terminal, Workflow, Layers, Database } from "lucide-react";
 
-<Callout type="info" icon={<Bot className="h-4 w-4" />}>
-  ### 前情提要
+<Callout type="info" icon={<Bot />}>
+
+### 前情提要
 
 我们在 [快速入门](/docs/development#实现插件逻辑) 中已经介绍了一个插件的基本结构，
 其中就包含了初始化插件的代码。接下来我们将以循序渐进的方式快速讲解插件初始化的具体知识点。
@@ -109,7 +110,7 @@ tokio::select! {
 }
 ```
 
-<Callout type="warn" icon={<Terminal className="h-4 w-4" />}>
+<Callout type="warn" icon={<Terminal />}>
 
 当插件退出时，框架内部会直接丢弃插件实例，析构时插件会被 kill。
 
@@ -219,7 +220,7 @@ where
 }
 ```
 
-<Callout type="info" icon={<Database className="h-4 w-4" />}>
+<Callout type="info" icon={<Database />}>
 
 初始化过程的关键步骤：
 

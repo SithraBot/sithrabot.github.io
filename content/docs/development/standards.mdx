@@ -9,7 +9,7 @@ import { Folder, File, Files } from 'fumadocs-ui/components/files';
 import { Card, Cards } from 'fumadocs-ui/components/card';
 import { FileCode, Zap, Package, AlertTriangle, CheckCircle, BookOpen, Info, Shield } from 'lucide-react';
 
-<Callout type="info" icon={<Info className="h-4 w-4" />}>
+<Callout>
   本指南定义了开发 sithra-rs 插件时应遵循的最佳实践和标准。遵循这些规范将有助于确保您的插件稳定可靠，并与 sithra-rs 生态系统和谐共存。
 </Callout>
 
@@ -36,7 +36,7 @@ log::debug!("调试信息: {:?}", data);
 log::warn!("配置项 {} 已弃用，请使用 {}", old_config, new_config);
 ```
 
-<Callout type="warn" icon={<AlertTriangle className="h-4 w-4" />}>
+<Callout type="warn" icon={<AlertTriangle />}>
   ### 禁止使用标准输出
 
 由于插件使用标准输入输出(stdio)与 sithra-rs 通信，请**绝对不要**使用以下方式输出信息：
@@ -126,7 +126,7 @@ match api_call().await {
 }
 ```
 
-<Callout type="warn" icon={<AlertTriangle className="h-4 w-4" />}>
+<Callout type="warn" icon={<AlertTriangle />}>
   ### 避免使用 unwrap 和 expect
 
 `unwrap()` 和 `expect()` 在遇到 `None` 或 `Err` 时会导致程序 panic：
@@ -147,7 +147,7 @@ let result = api_call().await.expect("API调用失败");
 
 </Callout>
 
-<Callout type="info" icon={<Info className="h-4 w-4" />}>
+<Callout type="info" icon={<Info />}>
   ### 推荐的错误处理库
 
 - **anyhow**: 适用于应用程序的通用错误处理
@@ -229,7 +229,7 @@ let result = api_call().await.expect("API调用失败");
   </Tab>
 </Tabs>
 
-<Callout type="info" icon={<BookOpen className="h-4 w-4" />}>
+<Callout type="info" icon={<BookOpen />}>
   服务型插件需要明确区分公共接口和内部实现：
 
 - `lib.rs` 中定义其他插件可以调用的类型和接口
@@ -279,7 +279,7 @@ let result = api_call().await.expect("API调用失败");
 
 ### 服务型插件版本控制
 
-<Callout type="warn" icon={<Shield className="h-4 w-4" />}>
+<Callout type="warn" icon={<Shield />}>
   ### 服务型插件的严格版本控制
 
 由于服务型插件定义了插件间通信的接口，版本控制尤为重要：
@@ -402,7 +402,7 @@ version = "1.2.3"  # 主版本.次版本.修订号
 
   </Card>
 
-<Callout type="warn" icon={<AlertTriangle className="h-4 w-4" />}>
+<Callout type="warn" icon={<AlertTriangle />}>
   ### 注意插件权限
 
 sithra-rs 插件运行时具有与主程序相同的系统权限。开发者有责任确保插件：
