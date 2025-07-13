@@ -159,7 +159,10 @@ anyhow = "1.0"
 use sithra_kit::{
     plugin::Plugin,
     server::extract::payload::Payload,
-    types::message::{Message, SendMessage, common::CommonSegment},
+    types::{
+        message::{Message, SendMessage, common::CommonSegment as H},
+        smsg,
+    },
 };
 
 /// 插件入口点
@@ -184,7 +187,7 @@ async fn main() {
 /// 处理 echo 命令的函数
 ///
 /// 当收到以 "echo " 开头的消息时，返回去掉 "echo " 前缀的内容
-async fn echo(Payload(msg): Payload<Message<CommonSegment>>) -> Option<SendMessage> {
+async fn echo(Payload(msg): Payload<Message<H>>) -> Option<SendMessage> {
     // 1. 消息是否为文本开头，如果是则获取文本，否则返回 None
     let text = msg.content.first()?.text_opt()?;
 
@@ -200,11 +203,11 @@ async fn echo(Payload(msg): Payload<Message<CommonSegment>>) -> Option<SendMessa
     // 5. 修改原始消息内容
     {
         let first = content.first_mut()?;
-        *first = CommonSegment::text(&text);
+        *first = H::text(&text);
     }
 
     // 6. 返回要发送的消息
-    Some(SendMessage::new(content))
+    Some(smsg!(content))
 }
 ```
 
