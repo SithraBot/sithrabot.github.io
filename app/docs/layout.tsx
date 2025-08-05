@@ -5,9 +5,9 @@ import { source } from '@/lib/source';
 import { BookMarked, Boxes, Hammer } from 'lucide-react';
 
 const iconMap = {
-  'Boxes': <Boxes />,
-  'Hammer': <Hammer />,
-}
+  Boxes: <Boxes className="size-9 md:size-5" />,
+  Hammer: <Hammer className="size-9 md:size-5" />,
+};
 
 function Icon({ icon }: { icon: string | undefined }) {
   if (!icon) return <BookMarked />;
@@ -30,12 +30,8 @@ const docsOptions: DocsLayoutProps = {
       },
     },
   },
-}
+};
 
 export default function Layout({ children }: { children: ReactNode }) {
-  return (
-    <DocsLayout {...docsOptions}>
-      {children}
-    </DocsLayout>
-  );
+  return <DocsLayout {...docsOptions}>{children}</DocsLayout>;
 }

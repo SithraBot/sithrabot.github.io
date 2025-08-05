@@ -32,14 +32,14 @@ import { Bot, Code, Puzzle, ArrowDown, Terminal, Workflow, Layers, Database } fr
 ```rust
 #[tokio::main]
 async fn main() {
-    let (plugin, Initialize { .. }) = Plugin::new::<()>().await.unwrap();
+    let (plugin, Initialize { .. }) = plugin!();
 }
 ```
 
 在这段代码中：
 
-<Card title="Plugin::new" className="mb-4">
-`Plugin` 结构体提供了插件的初始化方法，其中 `new` 方法用于创建一个新的插件实例，并进行初始化操作。
+<Card title="plugin! macro" className="mb-4">
+`plugin!` 宏封装了插件的初始化逻辑，它会创建一个新的插件实例并与框架进行握手。
 </Card>
 
 <Card title="返回值" className="mb-4">
@@ -47,7 +47,7 @@ async fn main() {
 </Card>
 
 <Card title="泛型参数">
-`new::<()>` 中的 `()` 表示不需要特定的配置类型，使用空元组作为配置。
+`plugin!` 宏的泛型参数表示插件的配置类型，如果省略，则默认为 `()`，即空配置。
 </Card>
 
 ### Initialize 结构体
@@ -58,6 +58,7 @@ async fn main() {
 pub struct Initialize<C> {
     pub config:    C,
     pub data_path: String,
+    pub id:        String,
 }
 ```
 
@@ -67,12 +68,13 @@ pub struct Initialize<C> {
 
 - `config` 字段表示插件的配置信息，可以为任何可反序列化类型
 - `data_path` 字段表示插件的数据路径，我们约定插件的所有数据都存储在该路径下
+- `id` 字段表示插件的唯一标识符，用于在框架中区分不同的插件实例。
 
 </Callout>
 
 ### 自定义插件配置
 
-通过为 `Plugin::new` 指定泛型参数，我们可以定义插件专属的配置类型：
+通过为 `plugin!` 宏指定泛型参数，我们可以定义插件专属的配置类型：
 
 ```rust
 struct Config {
@@ -84,7 +86,7 @@ async fn main() {
     let (
         plugin,
         Initialize { config, .. }
-    ) = Plugin::new::<Config>().await.unwrap();
+    ) = plugin!(Config);
 
     // 现在 config 是 Config 类型，可以访问 admins 字段
     for admin in &config.admins {
@@ -172,51 +174,79 @@ pub struct Plugin {
 让我们拆解 `Plugin::new` 方法，了解其内部实现：
 
 ```rust
-pub async fn new<Config>() -> Result<(Self, Initialize<Config>), PluginInitError>
+pub async fn new<Config>(version: &str, name: &str) -> (Self, Initialize<Config>)
 where
     Config: for<'de> Deserialize<'de>,
 {
-    // 创建对等节点
+    // 处理命令行选项，如 --version
+    if handle_options(version, name) {
+        process::exit(0);
+    }
+    // 创建对等节点、服务端和路由表
     let peer = Peer::new();
-    // 创建服务端
     let server = Server::new();
-    // 创建路由表
     let router = Router::new();
     // 从对等节点创建帧序列
-    let mut framed = sithra_kit::transport::util::framed(peer);
+    let mut framed = crate::transport::util::framed(peer);
 
-    // 执行初始化循环
+    // 执行初始化循环，等待框架发送初始化消息
     let init = loop {
-        // 等待对等节点发送消息
         let Some(msg) = <FramedPeer as StreamExt>::next(&mut framed).await else {
             break Err(PluginInitError::ConnectionClosed);
         };
         if let Ok(msg) = msg {
             let is_init = msg.path.as_ref().is_some_and(|p| p == Initialize::<Config>::path());
-            // 判断是否为初始化消息
             if is_init {
                 let config = msg.payload::<Initialize<Config>>();
-                // 返回初始化消息
-                break config.map_err(PluginInitError::DeserializationError);
+                break config.map_err(PluginInitError::ConfigDeserializeError);
             }
         }
-    }?;
+    };
 
-    // 初始化日志
+    // 处理初始化结果
+    let init = match init {
+        Ok(init) => init,
+        Err(err) => {
+            // 发送错误信息给框架
+            framed
+                .send(
+                    DataPack::builder()
+                        .path(Initialize::<Config>::path())
+                        .build_with_payload(InitializeResult::Err(err)),
+                )
+                .await.ok();
+            // 等待退出信号
+            tokio::signal::ctrl_c().await.ok();
+            // 退出进程
+            process::exit(1);
+        }
+    };
+
+    // 初始化日志系统
     init_log(server.client().sink());
+
+    // 发送初始化成功响应给框架
+    server
+        .client()
+        .send(
+            RequestDataPack::default()
+                .path(Initialize::<Config>::path())
+                .payload(InitializeResult::Ok(())),
+        )
+        .unwrap_or_else(|_| panic!("Failed to send initialization response: [{name}]"));
 
     // 用不到帧序列了，我们换回对等节点
     let peer = framed.into_inner();
-
+    
     // 返回实例
-    Ok((
+    (
         Self {
             peer,
             server,
             router,
         },
         init,
-    ))
+    )
 }
 ```
 
@@ -224,11 +254,13 @@ where
 
 初始化过程的关键步骤：
 
-1. 创建通信组件（对等节点、服务端、路由表）
-2. 等待框架发送初始化消息
-3. 解析配置信息
-4. 初始化日志系统
-5. 返回插件实例和初始化结果
+1. 处理命令行参数（如 `--version`）
+2. 创建通信组件（对等节点、服务端、路由表）
+3. 等待并解析框架的初始化消息
+4. 如果初始化失败，向框架报告错误并退出
+5. 初始化日志系统
+6. 向框架发送初始化成功响应
+7. 返回插件实例和初始化结果
 
 </Callout>
 
@@ -265,34 +297,64 @@ pub fn run(self) -> JoinSet<Result<(), ServerError>> {
     如果您希望更精细地控制初始化过程，可以考虑不使用 `Plugin` 高级封装，而是手动实现初始化流程：
 
     ```rust
-    // 创建对等节点
+    // 假设从 Cargo.toml 获取
+    const VERSION: &str = "0.1.0";
+    const NAME: &str = "my-plugin";
+
+    // 处理命令行选项
+    if handle_options(VERSION, NAME) {
+        process::exit(0);
+    }
+
+    // 创建对等节点、服务端和路由表
     let peer = Peer::new();
-    // 创建服务端
     let server = Server::new();
-    // 创建路由表
     let router = Router::new();
     // 从对等节点创建帧序列
     let mut framed = sithra_kit::transport::util::framed(peer);
 
     // 执行初始化循环
     let init = loop {
-        // 等待对等节点发送消息
         let Some(msg) = <FramedPeer as StreamExt>::next(&mut framed).await else {
             break Err(PluginInitError::ConnectionClosed);
         };
         if let Ok(msg) = msg {
             let is_init = msg.path.as_ref().is_some_and(|p| p == Initialize::<Config>::path());
-            // 判断是否为初始化消息
             if is_init {
                 let config = msg.payload::<Initialize<Config>>();
-                // 返回初始化消息
-                break config.map_err(PluginInitError::DeserializationError);
+                break config.map_err(PluginInitError::ConfigDeserializeError);
             }
         }
-    }?;
+    };
+
+    // 处理初始化结果
+    let init = match init {
+        Ok(init) => init,
+        Err(err) => {
+            framed
+                .send(
+                    DataPack::builder()
+                        .path(Initialize::<Config>::path())
+                        .build_with_payload(InitializeResult::Err(err)),
+                )
+                .await.ok();
+            tokio::signal::ctrl_c().await.ok();
+            process::exit(1);
+        }
+    };
 
     // 初始化日志
     init_log(server.client().sink());
+    
+    // 发送初始化成功响应
+    server
+        .client()
+        .send(
+            RequestDataPack::default()
+                .path(Initialize::<Config>::path())
+                .payload(InitializeResult::Ok(())),
+        )
+        .unwrap_or_else(|_| panic!("Failed to send initialization response: [{NAME}]"));
 
     // 用不到帧序列了，我们换回对等节点
     let peer = framed.into_inner();
@@ -303,34 +365,64 @@ pub fn run(self) -> JoinSet<Result<(), ServerError>> {
     以下是完整版的手动初始化和运行流程，包括服务启动和信号处理：
 
     ```rust
-    // 创建对等节点
+    // 假设从 Cargo.toml 获取
+    const VERSION: &str = "0.1.0";
+    const NAME: &str = "my-plugin";
+
+    // 处理命令行选项
+    if handle_options(VERSION, NAME) {
+        process::exit(0);
+    }
+
+    // 创建对等节点、服务端和路由表
     let peer = Peer::new();
-    // 创建服务端
     let server = Server::new();
-    // 创建路由表
     let router = Router::new();
     // 从对等节点创建帧序列
     let mut framed = sithra_kit::transport::util::framed(peer);
 
     // 执行初始化循环
     let init = loop {
-        // 等待对等节点发送消息
         let Some(msg) = <FramedPeer as StreamExt>::next(&mut framed).await else {
             break Err(PluginInitError::ConnectionClosed);
         };
         if let Ok(msg) = msg {
             let is_init = msg.path.as_ref().is_some_and(|p| p == Initialize::<Config>::path());
-            // 判断是否为初始化消息
             if is_init {
                 let config = msg.payload::<Initialize<Config>>();
-                // 返回初始化消息
-                break config.map_err(PluginInitError::DeserializationError);
+                break config.map_err(PluginInitError::ConfigDeserializeError);
             }
         }
-    }?;
+    };
+
+    // 处理初始化结果
+    let init = match init {
+        Ok(init) => init,
+        Err(err) => {
+            framed
+                .send(
+                    DataPack::builder()
+                        .path(Initialize::<Config>::path())
+                        .build_with_payload(InitializeResult::Err(err)),
+                )
+                .await.ok();
+            tokio::signal::ctrl_c().await.ok();
+            process::exit(1);
+        }
+    };
 
     // 初始化日志
     init_log(server.client().sink());
+    
+    // 发送初始化成功响应
+    server
+        .client()
+        .send(
+            RequestDataPack::default()
+                .path(Initialize::<Config>::path())
+                .payload(InitializeResult::Ok(())),
+        )
+        .unwrap_or_else(|_| panic!("Failed to send initialization response: [{NAME}]"));
 
     // 用不到帧序列了，我们换回对等节点
     let peer = framed.into_inner();
@@ -358,7 +450,7 @@ pub fn run(self) -> JoinSet<Result<(), ServerError>> {
 
 <Callout>
   无糖版实现适合对框架有深入了解的开发者，或者需要特殊定制初始化流程的场景。对于大多数插件开发者，
-  推荐使用 `Plugin` 高级封装来简化开发过程。
+  推荐使用 `plugin!` 宏来简化开发过程。
 </Callout>
 
 ## 下一步

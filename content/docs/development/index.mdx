@@ -21,7 +21,10 @@ import {
 
 <Callout type="info" icon={<Info className="h-4 w-4" />}>
   sithra-rs 是一个基于 Rust
-  的现代化、高性能、可扩展的机器人框架。通过本指南，您将学习如何开发自己的插件来扩展框架功能。
+  的现代化、高性能、可扩展的机器人框架。
+
+  通过本指南，您将学习如何开发自己的插件来扩展框架功能。
+
 </Callout>
 
 ## 开发前的准备
@@ -52,9 +55,13 @@ import {
 </Cards>
 
 <Callout type="info" icon={<BookOpen className="h-4 w-4" />}>
-  不用担心！即使您是 Rust
+  不用担心！
+
+  即使您是 Rust
   新手，只要掌握基础语法和异步编程概念，就可以开始开发插件了。
+
   我们提供了详细的示例代码和文档来帮助您快速上手。
+
 </Callout>
 
 ## 插件系统概述
@@ -125,7 +132,7 @@ cd my-plugin
 
 编辑 `Cargo.toml` 文件，添加必要的依赖：
 
-```toml
+```toml title="Cargo.toml"
 [package]
 name = "my-plugin"
 version = "0.1.0"
@@ -155,7 +162,7 @@ anyhow = "1.0"
 
 编辑 `src/main.rs` 文件，实现您的插件逻辑。以下是一个简单的 Echo 插件示例：
 
-```rust
+```rust title="src/main.rs"
 use sithra_kit::{
     plugin::Plugin,
     server::extract::payload::Payload,
@@ -299,7 +306,7 @@ cd my-custom-plugin
 
 编辑插件的 `Cargo.toml`，确保引用了正确的依赖：
 
-```toml
+```toml title="Cargo.toml"
 [package]
 name = "my-custom-plugin"
 version = "0.1.0"
@@ -343,7 +350,7 @@ nvim config.toml
 
 3. 在配置文件中添加您的插件：
 
-```toml
+```toml title="config.toml"
 [my-custom-plugin]
 path = "./target/debug/my-custom-plugin"
 ```
@@ -370,7 +377,9 @@ just run
 
 <Cards>
   <Card title="日志输出">
-    使用 <code>log::debug!</code>, <code>log::info!</code> 等宏在关键位置添加日志，帮助跟踪插件运行状态
+    使用 `log::debug!`, `log::info!`
+
+    等宏在关键位置添加日志，帮助跟踪插件运行状态
   </Card>
 
 <Card title="单元测试">为插件逻辑编写单元测试，确保各个函数按预期工作</Card>

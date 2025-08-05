@@ -83,9 +83,7 @@ sithra-rs 官方不对任何非官方插件的安全性负责。
     所有插件都需要在 `config.toml` 中进行注册才能被 sithra-rs 加载。关于如何编写配置，请[参考下一篇文档](/docs/usage/config)。
 
     一个最基础的插件注册示例如下：
-    ```toml
-    # config.toml
-
+    ```toml title="config.toml"
     [echo]
     path = "plugins/echo.exe"
     ```
@@ -115,9 +113,7 @@ sithra-rs 官方不对任何非官方插件的安全性负责。
 
 `headless` 插件当前还并未开发，此处配置仅作示例
 
-```toml
-# config.toml
-
+```toml title="config.toml"
 # 首先，注册插件本身
 [headless]
 path = "plugins/headless.exe"

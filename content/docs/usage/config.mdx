@@ -48,9 +48,7 @@ sithra-rs 使用 [TOML](https://toml.io/zh-cn/) 作为其配置文件的格式�
 
 假设我们有一个 `echo` 插件，它的可执行文件位于 `plugins/echo.exe`。一个最基础的配置如下：
 
-```toml
-# config.toml
-
+```toml title="config.toml"
 [echo]
 path = "plugins/echo.exe"
 args = [] # 可省略不写
@@ -75,9 +73,7 @@ TOML 提供了丰富的语法特性，让您能够灵活地组织配置。
 
 <Tabs items={['松散写法 (推荐)', '紧凑写法']}>
   <Tab>
-    ```toml
-    # config.toml
-
+    ```toml title="config.toml"
     # 使用 TOML 的点分隔键 (dotted keys) 来组织配置
     # 这种写法更加紧凑和清晰
     [headless]
@@ -92,9 +88,7 @@ TOML 提供了丰富的语法特性，让您能够灵活地组织配置。
 
   </Tab>
   <Tab>
-    ```toml
-    # config.toml
-
+    ```toml title="config.toml"
     # 使用内联表 (inline table) 来定义 config
     # 当配置项较少时也很方便
     [headless]
@@ -117,7 +111,7 @@ TOML 提供了丰富的语法特性，让您能够灵活地组织配置。
 
 一个包含多个插件的 `config.toml` 文件可能如下所示 (不可用, 仅供参考)：
 
-```toml
+```toml title="config.toml"
 # sithra-rs 完整配置文件示例
 
 # Echo 插件，无需额外配置
